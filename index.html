@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>高科大建工通勤・雙模備案</title>
+<style>
+  :root{
+    --ink:#2b2318;--sub:#6b5f49;--paper:#ede7d6;--card:#f8f3e8;--hair:#d9cfb8;
+    --orange:#a9542e;--teal:#5f6b39;--amber:#a97c1e;--red:#a03a2b;
+    --line:var(--orange);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink);background:var(--paper);line-height:1.6;font-size:16px;
+    padding:0 14px calc(40px + env(safe-area-inset-bottom));max-width:620px;margin:0 auto;}
+  header{position:sticky;top:0;z-index:5;background:var(--paper);
+    padding:15px 2px 12px;border-bottom:1px solid var(--hair);margin-bottom:16px;}
+  h1{font-size:20px;font-weight:800;letter-spacing:.3px}
+  .tagline{color:var(--sub);font-size:12.5px;margin-top:2px}
+
+  .nowbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+  .clock{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+  .clock #sec{color:var(--sub);font-weight:600}
+  .wx{display:flex;gap:4px;background:#e4dcc9;padding:4px;border-radius:11px}
+  .wx button{border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:700;
+    color:var(--sub);padding:6px 11px;border-radius:8px;cursor:pointer}
+  .wx button.on{background:#fbf8f0;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .wx button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  /* 現在建議 hero */
+  .advice{margin-top:13px;border-radius:14px;padding:14px 16px;color:#fff;background:#8a7d64;
+    box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .advice.out{background:linear-gradient(135deg,#b05a30,#8f4526)}
+  .advice.back{background:linear-gradient(135deg,#63703b,#49542c)}
+  .advice .phase{font-size:12px;font-weight:800;opacity:.9;letter-spacing:1px}
+  .advice .do{font-size:17px;font-weight:800;margin-top:3px;line-height:1.4}
+  .advice .sub{font-size:13.5px;margin-top:5px;opacity:.95}
+  .advice .count{margin-top:9px;font-size:13px;font-weight:800;background:rgba(255,255,255,.18);
+    display:inline-block;padding:5px 11px;border-radius:20px;font-variant-numeric:tabular-nums}
+  .advice .count.urgent{background:rgba(255,255,255,.95);color:var(--red)}
+
+  .switch{display:flex;gap:6px;margin-top:12px;background:#e4dcc9;padding:5px;border-radius:13px}
+  .switch button{flex:1;border:0;padding:10px 8px;border-radius:9px;cursor:pointer;
+    font-size:15px;font-weight:700;font-family:inherit;color:var(--sub);background:transparent;
+    transition:background .15s,color .15s}
+  .switch button .lbl{font-size:11px;font-weight:600;display:block;opacity:.8}
+  .switch button[data-on="out"].active{background:var(--orange);color:#fff}
+  .switch button[data-on="back"].active{background:var(--teal);color:#fff}
+  .switch button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  .pane{display:none}.pane.active{display:block}
+  .pane[data-dir="back"]{--line:var(--teal)}
+  .route-head{display:flex;align-items:baseline;gap:8px;margin:4px 2px 16px}
+  .route-head .big,.route-head .end{font-size:17px;font-weight:800}
+  .route-head .arrow{color:var(--line);font-weight:800}
+
+  .timeline{margin:0 2px}
+  .leg{display:flex}
+  .leg-time{flex:0 0 50px;text-align:right;padding-right:12px;padding-top:1px;
+    font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+  .leg-time small{display:block;font-size:11px;font-weight:600;color:var(--sub)}
+  .leg-track{flex:0 0 22px;position:relative}
+  .leg-track::before{content:"";position:absolute;left:50%;top:5px;transform:translateX(-50%);
+    width:12px;height:12px;border-radius:50%;background:var(--card);border:3px solid var(--line);z-index:1}
+  .leg-track::after{content:"";position:absolute;left:50%;top:5px;bottom:-4px;transform:translateX(-50%);
+    width:3px;background:var(--line)}
+  .leg:last-child .leg-track::after{display:none}
+  .leg.major .leg-track::before{background:var(--line)}
+  .leg-body{flex:1;padding:0 0 20px 4px;min-width:0}
+  .leg-title{font-size:15.5px;font-weight:700;line-height:1.4}
+  .leg-note{font-size:13.5px;color:var(--sub);margin-top:1px}
+  .branch{border-left:4px solid var(--line);background:var(--card);border-radius:0 10px 10px 0;
+    padding:9px 12px;margin-top:8px;box-shadow:0 1px 0 var(--hair)}
+  .branch.backup{border-left-color:var(--amber)}
+  .branch .tag{font-size:12px;font-weight:800;display:inline-block;margin-bottom:2px}
+  .branch.primary .tag{color:var(--line)}.branch.backup .tag{color:var(--amber)}
+  .branch .txt{font-size:14px}.branch .txt b{font-weight:700}
+
+  section.block{background:var(--card);border:1px solid var(--hair);border-radius:14px;padding:15px 16px;margin-top:14px}
+  section.block h2{font-size:15px;font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .keys{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .keys li{font-size:14px;padding-left:20px;position:relative}
+  .keys li::before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:50%;background:var(--teal)}
+  .keys li.warn::before{background:var(--red)}
+  .keys li b{font-weight:700}.keys li .hl{color:var(--red);font-weight:700}
+  .navlinks{display:flex;flex-direction:column;gap:9px}
+  .navlinks a{display:flex;align-items:center;justify-content:space-between;text-decoration:none;
+    color:var(--ink);background:var(--paper);border:1px solid var(--hair);border-radius:11px;
+    padding:12px 14px;font-size:14px;font-weight:700}
+  .navlinks a[data-c="out"] .go{color:var(--orange);font-weight:800}
+  .navlinks a[data-c="back"] .go{color:var(--teal);font-weight:800}
+  .navlinks a:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .todo{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .todo li{font-size:13.5px;padding-left:22px;position:relative}
+  .todo li::before{content:"？";position:absolute;left:0;top:0;color:var(--amber);font-weight:800}
+  footer{color:var(--sub);font-size:11.5px;text-align:center;margin-top:22px;line-height:1.7}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>高科大建工・通勤備案</h1>
+  <div class="tagline">沒抽到車位版 ｜ TPASS 高雄 399 刷到底 ｜ 2026 核實</div>
+
+  <div class="nowbar">
+    <div class="clock" id="clock">—</div>
+    <div class="wx" role="group" aria-label="天氣">
+      <button id="wx-sun" class="on" onclick="setWx('sun')">☀️ 晴</button>
+      <button id="wx-rain" onclick="setWx('rain')">🌧️ 雨</button>
+    </div>
+  </div>
+
+  <div class="advice" id="advice">
+    <div class="phase" id="ad-phase">—</div>
+    <div class="do" id="ad-do">—</div>
+    <div class="sub" id="ad-sub"></div>
+    <div class="count" id="ad-count" style="display:none"></div>
+  </div>
+
+  <div class="switch" role="tablist">
+    <button data-on="out" class="active" onclick="pick('out')">去程 上課<span class="lbl">17:30 下班 → 19:00</span></button>
+    <button data-on="back" onclick="pick('back')">回程 回家<span class="lbl">21:30 下課 → 到家</span></button>
+  </div>
+</header>
+
+<main>
+
+<!-- 去程 -->
+<section class="pane active" data-dir="out">
+  <div class="route-head"><span class="big">大寮</span><span class="arrow">→</span><span class="big">信義國小</span><span class="arrow">→</span><span class="end">建工</span></div>
+  <div class="timeline">
+    <div class="leg major"><div class="leg-time">17:30</div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">下班・機車到捷運大寮站</div><div class="leg-note">約 10 分</div></div></div>
+    <div class="leg"><div class="leg-time">17:42</div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">橘線 往西子灣方向</div><div class="leg-note">坐到 <b>信義國小站（O5）</b>，約 18 分。<b>不是</b>五塊厝。</div></div></div>
+    <div class="leg"><div class="leg-time">18:00</div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">信義國小站・轉乘</div><div class="leg-note">1／5 號出口側有黃1站牌與 YouBike</div>
+      <div class="branch primary"><span class="tag">主・黃1</span>
+        <div class="txt">認明 <b>往「忠誠路口」</b> → 直達建工（第18站→第26站，約15–18分）。晚間班距約 <b>25 分</b>，到站看 App。抓得準 18:25 到、漏一班約 18:48 到，仍趕得上。</div></div>
+      <div class="branch backup"><span class="tag">☀️ 晴天可改・YouBike</span>
+        <div class="txt">出站<b>先看 App 有沒有車</b>（這站傍晚常沒車）。有車就騎大順路北上約 15–20 分到建工，不用等車。</div></div>
+    </div></div>
+    <div class="leg major"><div class="leg-time">18:25<small>±</small></div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">到 高科大（建工校區）</div><div class="leg-note">距 19:00 上課有緩衝</div></div></div>
+  </div>
+</section>
+
+<!-- 回程 -->
+<section class="pane" data-dir="back">
+  <div class="route-head"><span class="big">建工</span><span class="arrow">→</span><span class="big">信義國小</span><span class="arrow">→</span><span class="end">大寮</span></div>
+  <div class="timeline">
+    <div class="leg major"><div class="leg-time">21:30</div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">下課・高科大建工</div>
+      <div class="branch primary"><span class="tag">主・YouBike（順）</span>
+        <div class="txt">校區東北側「<b>建工路414號對側</b>」或「大順二路／建工路口」借車，大順路南下約 15–20 分。信義國小那站空位多，<b>好還</b>。</div></div>
+      <div class="branch backup"><span class="tag">🌧️ 雨天／太累・黃1</span>
+        <div class="txt">認明 <b>往「實踐大學」</b>。末班 22:05 發車、約 <b>22:25–30 經建工</b>；建議搭約 22:00 到站那班（21:40 發車）。</div></div>
+    </div></div>
+    <div class="leg"><div class="leg-time">21:50<small>±</small></div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">信義國小站・還車／下車</div><div class="leg-note">轉橘線</div></div></div>
+    <div class="leg"><div class="leg-time">21:52</div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">橘線 往大寮方向</div><div class="leg-note">約 18 分（橘線末班遠晚於此，無虞）</div></div></div>
+    <div class="leg major"><div class="leg-time">22:15<small>±</small></div><div class="leg-track"></div><div class="leg-body">
+      <div class="leg-title">大寮站 → 機車回家</div><div class="leg-note">約 3 分到家</div></div></div>
+  </div>
+</section>
+
+<!-- 記牢 -->
+<section class="block">
+  <h2>🔑 記牢這幾條</h2>
+  <ul class="keys">
+    <li class="warn">轉乘一律在 <b>信義國小站（O5）</b>。<span class="hl">黃1 不停五塊厝</span>，別下錯站。</li>
+    <li>方向別搭反：去建工認 <b>往忠誠路口</b>，回家認 <b>往實踐大學</b>。</li>
+    <li>黃1 晚間 <b>25 分一班</b>；回程末班約 <b>22:25–30</b> 經建工，最後防線。</li>
+    <li>信義國小 YouBike 傍晚常沒車 → <b>去程借車前先看 App</b>；回程要「還車」，空位多好還。</li>
+    <li><b>TPASS 高雄 399 全包</b>：橘線、黃1、YouBike <b>每趟前 30 分免費</b>（你這段 15–20 分，免費）。刷就對了。</li>
+  </ul>
+</section>
+
+<!-- 導航 -->
+<section class="block">
+  <h2>🗺 騎車導航（Google 地圖）</h2>
+  <div class="navlinks">
+    <a data-c="out" href="https://www.google.com/maps/dir/?api=1&origin=22.63073,120.31292&destination=22.6516959,120.3282832&travelmode=bicycling" target="_blank" rel="noopener"><span>去程　信義國小 → 建工</span><span class="go">開啟 ›</span></a>
+    <a data-c="back" href="https://www.google.com/maps/dir/?api=1&origin=22.6516959,120.3282832&destination=22.63073,120.31292&travelmode=bicycling" target="_blank" rel="noopener"><span>回程　建工 → 信義國小</span><span class="go">開啟 ›</span></a>
+  </div>
+</section>
+
+<!-- 待確認 -->
+<section class="block">
+  <h2>⚠️ 還沒鎖的變數</h2>
+  <ul class="todo">
+    <li>去程黃1 精確發車時刻 —— 官方靜態表抓不到，目前靠 App 即時（要真・即時到站需另架後端）。</li>
+    <li>信義國小站黃1 站牌確切出口號 —— 現場對一次。</li>
+  </ul>
+</section>
+
+<footer>
+  資料：高雄市交通局／漢程客運 TDX 20260803・高捷橘線・YouBike 站點・TPASS 高雄 399<br>
+  時鐘為你裝置本機時間；班次時間為估算，實際以現場與 App 為準
+</footer>
+
+</main>
+
+<script>
+  var WX='sun';
+  var DAYS=['日','一','二','三','四','五','六'];
+  function p2(n){return (n<10?'0':'')+n;}
+
+  function setWx(w){
+    WX=w;
+    document.getElementById('wx-sun').classList.toggle('on',w==='sun');
+    document.getElementById('wx-rain').classList.toggle('on',w==='rain');
+    render();
+  }
+  function pick(dir){
+    document.querySelectorAll('.switch button').forEach(function(b){b.classList.toggle('active',b.dataset.on===dir);});
+    document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('active',p.dataset.dir===dir);});
+  }
+
+  // 距今日某時刻的秒數（可為負）
+  function secsTo(h,m){var n=new Date();var t=new Date(n);t.setHours(h,m,0,0);return Math.round((t-n)/1000);}
+  function fmtDur(s){
+    if(s<0)s=0;
+    var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
+    if(h>0)return h+' 小時 '+m+' 分';
+    return m+' 分 '+p2(ss)+' 秒';
+  }
+
+  function render(){
+    var n=new Date();
+    document.getElementById('clock').innerHTML='週'+DAYS[n.getDay()]+' '+p2(n.getMonth()+1)+'/'+p2(n.getDate())+' '+
+      p2(n.getHours())+':'+p2(n.getMinutes())+'<span id="sec">:'+p2(n.getSeconds())+'</span>';
+
+    var mins=n.getHours()*60+n.getMinutes();
+    var ad=document.getElementById('advice');
+    var phase=document.getElementById('ad-phase');
+    var doEl=document.getElementById('ad-do');
+    var subEl=document.getElementById('ad-sub');
+    var cEl=document.getElementById('ad-count');
+    ad.className='advice';cEl.className='count';cEl.style.display='none';
+
+    var OUT = mins>=900 && mins<1170;   // 15:00–19:30
+    var BACK= mins>=1200 && mins<1439;  // 20:00–23:59
+
+    if(OUT){
+      ad.classList.add('out');
+      phase.textContent='現在 · 去程（上課）';
+      if(WX==='sun'){
+        doEl.textContent='搭黃1 → 認「往忠誠路口」';
+        subEl.innerHTML='天氣好、若信義國小站 App 有車，可改騎 YouBike 更省心。';
+      }else{
+        doEl.textContent='搭黃1 → 認「往忠誠路口」';
+        subEl.innerHTML='下雨就別騎車，安穩搭黃1。';
+      }
+      var s=secsTo(19,0);
+      cEl.style.display='inline-block';
+      if(s<=0){cEl.classList.add('urgent');cEl.textContent='已過 19:00 上課時間';}
+      else{cEl.textContent='距上課 19:00 還有 '+fmtDur(s);if(s<=600)cEl.classList.add('urgent');}
+    }else if(BACK){
+      ad.classList.add('back');
+      phase.textContent='現在 · 回程（回家）';
+      if(WX==='sun'){
+        doEl.textContent='騎 YouBike → 建工 → 信義國小';
+        subEl.innerHTML='建工路414號對側借車，大順路南下，信義國小好還。';
+      }else{
+        doEl.textContent='搭黃1 → 認「往實踐大學」';
+        subEl.innerHTML='雨天搭車。抓約 22:00 到站那班（21:40 發）。';
+      }
+      var s2=secsTo(22,5);
+      cEl.style.display='inline-block';
+      if(s2<=0){cEl.classList.add('urgent');cEl.textContent='黃1 末班已過（22:05 發），改騎 YouBike 或查 App';}
+      else{cEl.textContent='黃1 末班 22:05 發車倒數 '+fmtDur(s2)+'（約 22:25–30 經建工）';if(s2<=900)cEl.classList.add('urgent');}
+    }else{
+      phase.textContent='現在 · 非上下課時段';
+      doEl.textContent='去程搭黃1／回程晴騎 YouBike、雨搭黃1';
+      subEl.innerHTML='切下方「去程／回程」看完整步驟。';
+    }
+  }
+
+  // 載入時依時間自動選對的頁籤
+  (function initPane(){
+    var m=new Date().getHours()*60+new Date().getMinutes();
+    if(m>=1200 && m<1439) pick('back'); else pick('out');
+  })();
+  render();
+  setInterval(render,1000);
+</script>
+</body>
+</html>
